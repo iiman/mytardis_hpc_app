@@ -1,6 +1,6 @@
 {% load url from future %}
 
-<form action="{% url 'hpc_app:index' %}" method="post">{% csrf_token %}
+<form action="{% url 'index' experiment_id  %}" method="post">{% csrf_token %}
     {{ form.as_p}}
     <input type="submit" value="Submit" id="id_submit"/>
 </form>
