@@ -1,0 +1,81 @@
+{% load url from future %}
+
+<form action="{% url 'hpc_app:index' %}" method="post">{% csrf_token %}
+    {{ form.as_p}}
+    <input type="submit" value="Submit" id="id_submit"/>
+</form>
+
+
+<script src="http://code.jquery.com/jquery-latest.js"></script>
+<script>
+    default_group_id = "ID000000"
+    default_number_of_cores = "1"
+
+    $(document).ready(function(){
+        if (!$(':checkbox').is(':checked')){
+            $("#id_number_of_cores").val(default_number_of_cores)
+            $("#id_group_id").val(default_group_id)
+            $("#id_number_of_cores").prop("readonly",true)
+            $("#id_group_id").prop("readonly",true)
+        }
+        else{
+            if ($('#id_stages_0').is(':checked'))
+                $("#id_number_of_cores").prop("readonly",false);
+            else
+                $("#id_number_of_cores").prop("readonly",true);
+
+            if ($(':checkbox').is(':checked')
+                    && !($('#id_stages_0').is(':checked')))
+                $("#id_group_id").prop("readonly",false)
+            else
+                $("#id_group_id").prop("readonly",true)
+        }
+    });
+
+    $(':checkbox').click(function () {
+        if ($('#id_stages_0').is(':checked')) {
+            number_of_cores_activate()
+            group_id_deactivate()
+        }
+        else
+            number_of_cores_deactivate()
+
+        if ($('#id_stages_1').is(':checked')
+                || $('#id_stages_2').is(':checked')
+                || $('#id_stages_3').is(':checked')) {
+            if(!($('#id_stages_0').is(':checked')))
+                group_id_activate()
+            else
+                group_id_deactivate()
+        }
+        else{
+            if ($(':checkbox').not(':checked')
+                    || $('#id_stages_0').is(':checked'))
+                group_id_deactivate()
+        }
+    });
+
+    function number_of_cores_activate(){
+        $("#id_number_of_cores").prop("readonly",false)
+        if ($("#id_number_of_cores").val() == default_number_of_cores){
+            $("#id_number_of_cores").val("")
+        }
+    }
+
+    function number_of_cores_deactivate(){
+        $("#id_number_of_cores").prop("readonly",true)
+        $("#id_number_of_cores").val(default_number_of_cores);
+    }
+
+    function group_id_activate(){
+        $("#id_group_id").prop("readonly",false)
+        if ($("#id_group_id").val() == default_group_id)
+            $("#id_group_id").val("")
+    }
+
+    function group_id_deactivate(){
+        $("#id_group_id").prop("readonly",true)
+        $("#id_group_id").val(default_group_id)
+    }
+
+</script>
