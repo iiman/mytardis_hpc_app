@@ -1,0 +1,7 @@
+{% load url from future %}
+
+<body>
+
+<form action="{% url 'tardis.apps.mytardis_hpc_app.views.response'  %}" method="post">{% csrf_token %}
+    {{ form.as_p}}
+</form>

@@ -1,10 +1,11 @@
 {% load url from future %}
 
-<form action="{% url 'index' experiment_id  %}" method="post">{% csrf_token %}
+
+<form action="{% url 'tardis.apps.mytardis_hpc_app.views.index' experiment_id  %}" method="post">{% csrf_token %}
     {{ form.as_p}}
     <input type="submit" value="Submit" id="id_submit"/>
-</form>
 
+</form>
 
 <script src="http://code.jquery.com/jquery-latest.js"></script>
 <script>
