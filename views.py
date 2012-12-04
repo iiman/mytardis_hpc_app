@@ -9,6 +9,8 @@ from tardis.apps.mytardis_hpc_app.response_form import ResponseForm
 from django.template import Context, RequestContext, loader
 from django.contrib import messages
 import json
+from tardis.tardis_portal.shortcuts import HttpResponse
+
 
 receiver = "iimanyusuf@gmail.com"
 
@@ -93,3 +95,14 @@ def submission(request, experiment_id):
     return render(request, 'mytardis_hpc_app/submission.html', {
         'experiment_id': experiment_id,
         })
+
+
+def results_ready(request, group_id):
+    res = '""'
+    if request.method == 'POST':
+        if 'files' in request.POST:
+            res = request.POST['files']
+        else:
+            res = '""'
+    return HttpResponse(json.dumps(res),
+        mimetype='application/json')
