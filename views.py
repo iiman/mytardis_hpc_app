@@ -90,7 +90,7 @@ def response(request):
     if request.method == 'POST':
         input_parameter = request.POST
         message = input_parameter['message']
-        sendEmail(message, receiver)
+        #sendEmail(message, receiver)
     return render(request, 'mytardis_hpc_app/response.html', {
         'form':form
             })

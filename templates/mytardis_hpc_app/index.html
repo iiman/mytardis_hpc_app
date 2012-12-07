@@ -106,48 +106,12 @@
     });
 
     $('#hpcForm').submit(function(event){
+        if (!validateForm())
+            return false;
+
         post_vars = $(this).serialize()
        // alert(post_vars)
-
         action = $("#hpcForm").attr('action');
-        group_id = $("#id_group_id").val();
-        destination = $("#id_destination").val();
-        hpc_app = $("#id_hpc_apps").val();
-        number_of_cores = $("#id_number_of_cores").val();
-        error_message = "";
-
-
-
-        if(hpc_app.length == 0){
-            error_message+= "Select an HPC app\n";
-
-
-        }
-
-        if(destination.length == 0){
-            error_message+= "Select a destination\n";
-
-        }
-
-        if (!$(':checkbox').is(':checked')){
-            error_message+= "Select a stage\n";
-
-        }
-
-        if (number_of_cores != parseInt(number_of_cores)
-		|| parseInt(number_of_cores) < 1){
-            error_message+= "Enter number of cores (1 or more)\n"
-        }
-
-        if(group_id.length == 0){
-            error_message+= "Enter Group ID\n";
-        }
-
-
-        if(error_message.length != 0){
-            alert(error_message);
-            return false;
-        }
 
         $.ajax({
             'async': false,
@@ -168,9 +132,6 @@
         load_default_form_settings()
         return false
     });
-
-
-
 
     function number_of_cores_activate(){
         $("#id_number_of_cores").prop("readonly",false)
@@ -195,6 +156,35 @@
         $("#id_group_id").val(default_group_id)
     }
 
+    function validateForm(){
+        group_id = $("#id_group_id").val();
+        destination = $("#id_destination").val();
+        hpc_app = $("#id_hpc_apps").val();
+        number_of_cores = $("#id_number_of_cores").val();
+        error_message = "";
+
+        if(hpc_app.length == 0)
+            error_message+= "Select an HPC app\n";
+
+        if(destination.length == 0)
+            error_message+= "Select a destination\n";
+
+        if (!$(':checkbox').is(':checked'))
+            error_message+= "Select a stage\n";
+
+        if (number_of_cores != parseInt(number_of_cores)
+                || parseInt(number_of_cores) < 1)
+            error_message+= "Enter number of cores (1 or more)\n"
+
+        if(group_id.length == 0)
+            error_message+= "Enter Group ID\n";
+
+        if(error_message.length != 0){
+            alert(error_message);
+            return false;
+        }
+        return true
+    }
 
     function load_default_form_settings(){
         $("#id_number_of_cores").val(default_number_of_cores)
@@ -208,7 +198,6 @@
         $("#id_destination")[0].selectedIndex = 0
         $("#id_hpc_apps")[0].selectedIndex = 0
     }
-
 
 </script>
 
