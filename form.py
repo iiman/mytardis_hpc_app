@@ -1,4 +1,5 @@
 from django import forms
+from django.forms import widgets
 from django.forms.fields import ChoiceField, MultipleChoiceField
 from django.forms.widgets import CheckboxSelectMultiple
 
@@ -17,4 +18,6 @@ class HPCForm(forms.Form):
         widget=CheckboxSelectMultiple)
 
     number_of_cores = forms.IntegerField(min_value=1)
-    group_id = forms.CharField(label="Group ID")
+    group_id = forms.CharField(label="Group ID", required=True,  widget=widgets.TextInput(attrs={
+        'class': 'required'
+    }))

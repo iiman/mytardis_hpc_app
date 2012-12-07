@@ -1,15 +1,61 @@
 {% load url from future %}
 
-
-<form action="{% url 'tardis.apps.mytardis_hpc_app.views.index' experiment_id  %}" method="post">{% csrf_token %}
+<form id="hpcForm" action="{% url 'tardis.apps.mytardis_hpc_app.views.index' experiment_id %}"  method="post">{% csrf_token %}
     {{ form.as_p}}
-    <input type="submit" value="Submit" id="id_submit"/>
-
+    <input  type="submit" value="Submit" id="id_submit" />
 </form>
 
-<script src="http://code.jquery.com/jquery-latest.js"></script>
+<!-- successful form submission notification dialog -->
+<div class="modal" id="success_notification">
+    <h2>HPC computation</h2>
+    <p>
+        Submitted Successfully..
+    </p>
+    <p>
+        <button class="close"> Close </button>
+    </p>
+</div>
+
+
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+
+<style>
+    .modal {
+        background-color:#fff;
+        display:none;
+        width:350px;
+        padding:15px;
+        text-align:left;
+        border:2px solid #333;
+
+        opacity:0.8;
+        -moz-border-radius:6px;
+        -webkit-border-radius:6px;
+        -moz-box-shadow: 0 0 50px #ccc;
+        -webkit-box-shadow: 0 0 50px #ccc;
+    }
+</style>
+
+
+<style>
+    div.hidden_message{
+        display:none
+    }
+</style>
+
+<div id="dialog-model" title="HPC Computation " class='hidden_message'>
+    <p>
+        <span class="ui-icon ui-icon-circle-check" style="float: left; margin: 0 7px 50px 0;"></span>
+      Successful submission
+    </p>
+   
+</div>
+
+
 <script>
-    default_group_id = "ID000000"
+    default_group_id = "ID0000"
     default_number_of_cores = "1"
 
     $(document).ready(function(){
@@ -33,7 +79,7 @@
         }
     });
 
-    $(':checkbox').click(function () {
+     $(':checkbox').click(function () {
         if ($('#id_stages_0').is(':checked')) {
             number_of_cores_activate()
             group_id_deactivate()
@@ -55,6 +101,30 @@
                 group_id_deactivate()
         }
     });
+
+    $('#hpcForm').submit(function(){
+        post_vars = $(this).serialize()
+        action = $("#hpcForm").attr('action')
+
+        $.ajax({
+            'async': false,
+            'global': true,
+            type: "POST",
+            url: action,
+            data: post_vars,
+            success: $("#dialog-model" ).dialog({
+                modal: true,
+                buttons: {
+                    Ok: function() {
+                        $( this ).dialog( "close" );
+                    }
+                }
+            }),
+            error: function(data) { alert(data.responseText || 'An error has occurred'); }
+        });
+        return false
+    });
+
 
     function number_of_cores_activate(){
         $("#id_number_of_cores").prop("readonly",false)
@@ -80,3 +150,8 @@
     }
 
 </script>
+
+
+
+
+

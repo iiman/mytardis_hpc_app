@@ -3,6 +3,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from tardis.tardis_portal.models.dataset import Dataset
 from tardis.apps.mytardis_hpc_app.form import HPCForm
 from tardis.apps.mytardis_hpc_app.response_form import ResponseForm
 
@@ -12,67 +13,88 @@ import json
 
 receiver = "iimanyusuf@gmail.com"
 
+
 def index(request, experiment_id):
-
-    print "URL is ", request.path
-
+    print "URL is %s experiment id %s " % (request.path, experiment_id)
     if request.method == 'POST':
         form = HPCForm(request.POST)
+
         if form.is_valid():
-            number_of_cores = form.cleaned_data['number_of_cores']
-            group_id = form.cleaned_data['group_id']
-            selected_stages = form.cleaned_data['stages']
+            print 'post request'
+            post_request_values = form.cleaned_data
+            input_dir_path = get_input_dir_path(experiment_id)
+            if input_dir_path:
+                encoded_input_dir = encodeZip(input_dir_path)
+                post_request_values['input_dir'] = encoded_input_dir
 
             from threading import Thread
-            t= Thread(target=submitjob, args=(form,))
+            t = Thread(target=submitjob, args=(post_request_values,))
             t.start()
 
-            template = loader.get_template('mytardis_hpc_app/submission.html')
+            template = loader.get_template(
+                    'mytardis_hpc_app/submission.html')
             context = RequestContext(request,
-                {'number_of_cores': number_of_cores,
-                 'the_page': "empty",
-                 'experiment_id': experiment_id,
-                 'group_id': group_id,
-                 'form':form,
-                 'email':receiver}
-            )
-
+                    {'experiment_id': experiment_id,
+                     'email':receiver}
+                )
             return HttpResponse(template.render(context))
-    else:
-        form = HPCForm() # An unbound form
+        else:
+            print 'invalid post request'
+    print 'get requeset'
 
+    form = HPCForm()
     return render(request, 'mytardis_hpc_app/index.html', {
         'form': form,
         'experiment_id': experiment_id,
         })
 
-def submitjob(form):
+
+def encodeZip(zip_file):
+    import base64
+    f = open(zip_file, "rb")
+    b64_text = base64.b64encode(f.read())
+    f.close()
+    return b64_text
+
+
+def submitjob(values):
     import urllib
     import urllib2
 
     url = "http://127.0.0.1:8000/"
-    values=form.cleaned_data
+    #values=form.cleaned_data
+
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     response = urllib2.urlopen(req)
     the_page = response.read()
 
 
-def response(request):
+def get_input_dir_path(experiment_id):
+    dataset_list = Dataset.objects.filter(
+        experiments__id=experiment_id,
+        description='HRMC')
+    if dataset_list:
+        dataset = dataset_list[0]
+        for dataf in dataset.dataset_file_set.all():
+            if 'input.zip' in dataf.filename:
+                return dataf.get_absolute_filepath()
+    return None
 
+
+def response(request):
     print "URL is ", request.path
     form = ResponseForm()
     if request.method == 'POST':
-        form = ResponseForm(request.POST)
-        if form.is_valid():
-            group_id = form.cleaned_data['group_id']
-            print "My new Group ID is ", group_id
-            sendEmail(group_id, receiver)
+        input_parameter = request.POST
+        message = input_parameter['message']
+        sendEmail(message, receiver)
+    return render(request, 'mytardis_hpc_app/response.html', {
+        'form':form
+            })
 
-    return render(request, 'mytardis_hpc_app/response.html', {'form':form})
 
-
-def sendEmail(group_id, receiver) :
+def sendEmail(message, receiver) :
     import smtplib
     import string
     subject = "Group ID for BDP computation"
@@ -82,7 +104,7 @@ def sendEmail(group_id, receiver) :
         "TO: %s" %receiver,
         "Subject: %s" %subject,
         " ",
-        "Your group ID is %s" % group_id
+        message
         ), "\r\n")
     server = smtplib.SMTP('localhost')
     server.sendmail(sender, receiver, body)
