@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
 <script src="http://code.jquery.com/jquery-1.8.3.js"></script>
 <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+<script type="text/javascript" src="http://jzaefferer.github.com/jquery-validation/jquery.validate.js"></script>
 
 <style>
     .modal {
@@ -57,6 +58,8 @@
 <script>
     default_group_id = "ID0000"
     default_number_of_cores = "1"
+
+   // $("#hpcForm").validate();
 
     $(document).ready(function(){
         if (!$(':checkbox').is(':checked')){
@@ -96,15 +99,55 @@
                 group_id_deactivate()
         }
         else{
-            if ($(':checkbox').not(':checked')
+            if ((!$(':checkbox').is(':checked'))
                     || $('#id_stages_0').is(':checked'))
                 group_id_deactivate()
         }
     });
 
-    $('#hpcForm').submit(function(){
+    $('#hpcForm').submit(function(event){
         post_vars = $(this).serialize()
-        action = $("#hpcForm").attr('action')
+       // alert(post_vars)
+
+        action = $("#hpcForm").attr('action');
+        group_id = $("#id_group_id").val();
+        destination = $("#id_destination").val();
+        hpc_app = $("#id_hpc_apps").val();
+        number_of_cores = $("#id_number_of_cores").val();
+        error_message = "";
+
+
+
+        if(hpc_app.length == 0){
+            error_message+= "Select an HPC app\n";
+
+
+        }
+
+        if(destination.length == 0){
+            error_message+= "Select a destination\n";
+
+        }
+
+        if (!$(':checkbox').is(':checked')){
+            error_message+= "Select a stage\n";
+
+        }
+
+        if (number_of_cores != parseInt(number_of_cores)
+		|| parseInt(number_of_cores) < 1){
+            error_message+= "Enter number of cores (1 or more)\n"
+        }
+
+        if(group_id.length == 0){
+            error_message+= "Enter Group ID\n";
+        }
+
+
+        if(error_message.length != 0){
+            alert(error_message);
+            return false;
+        }
 
         $.ajax({
             'async': false,
@@ -122,8 +165,11 @@
             }),
             error: function(data) { alert(data.responseText || 'An error has occurred'); }
         });
+        load_default_form_settings()
         return false
     });
+
+
 
 
     function number_of_cores_activate(){
@@ -148,6 +194,25 @@
         $("#id_group_id").prop("readonly",true)
         $("#id_group_id").val(default_group_id)
     }
+
+
+    function load_default_form_settings(){
+        $("#id_number_of_cores").val(default_number_of_cores)
+        $("#id_group_id").val(default_group_id)
+        $("#id_number_of_cores").prop("readonly",true)
+        $("#id_group_id").prop("readonly",true)
+
+        $(':checked').each(function(){
+            this.checked = false;
+        });
+        $("#id_destination")[0].selectedIndex = 0
+        $("#id_hpc_apps")[0].selectedIndex = 0
+
+
+
+    }
+
+
 
 </script>
 
