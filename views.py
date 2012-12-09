@@ -2,15 +2,19 @@
 
 from django.shortcuts import render
 from django.http import HttpResponse
+from tardis.tardis_portal.shortcuts import HttpResponse
+from django.template import Context, RequestContext, loader
 
 from tardis.tardis_portal.models.dataset import Dataset
 from tardis.apps.mytardis_hpc_app.form import HPCForm
 from tardis.apps.mytardis_hpc_app.response_form import ResponseForm
 
-from django.template import Context, RequestContext, loader
-from django.contrib import messages
+
 import json
-from tardis.tardis_portal.shortcuts import HttpResponse
+import urllib
+import urllib2
+
+import settings
 
 
 receiver = "iimanyusuf@gmail.com"
@@ -60,12 +64,7 @@ def encodeZip(zip_file):
 
 
 def submitjob(values):
-    import urllib
-    import urllib2
-
-    url = "http://127.0.0.1:8000/"
-    #values=form.cleaned_data
-
+    url = settings.BDP_HPC_URL
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     response = urllib2.urlopen(req)
@@ -90,7 +89,7 @@ def response(request):
     if request.method == 'POST':
         input_parameter = request.POST
         message = input_parameter['message']
-        #sendEmail(message, receiver)
+        sendEmail(message, receiver)
     return render(request, 'mytardis_hpc_app/response.html', {
         'form':form
             })
