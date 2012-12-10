@@ -162,31 +162,18 @@ def _make_data_set(exp_id):
     return dataset
 
 
-def _make_data_file(dataset, filename, text):
+def _make_data_file(dataset, filename, content):
     # TODO:
     # create datasetfile
-    # df = models.Dataset_File()
-    # df.dataset = dataset
-    # df.filename = path.basename(self.file)
-    # df.url = 'file://'+self.file
-    # df.protocol = "staging"
-    # df.size = len(content)
-    # df.verify(allowEmptyChecksums=True)
-    # df.save()
-    # self.df = df
-    pass
-
-    # store the key
-        #eps, was_created = ExperimentParameterSet.objects.\
-        #    get_or_create(experiment=e, schema=key_schema)
-        #if was_created:
-        #    logger.warn("was created")
-        #ep, was_created = ExperimentParameter.objects.get_or_create(parameterset=eps,
-        #    name=key_name,
-        #    string_value=key_value)
-        #if was_created:
-        #    logger.warn("was created again")
-        #ep.save()
-
-
-
+    f = mktemp()
+    open(self.file, "w+b").write(content)
+    df = models.Dataset_File()
+    df.dataset = dataset
+    df.filename = filename
+    df.url = 'file://'+f
+    df.protocol = "staging"
+    df.size = len(content)
+    df.verify(allowEmptyChecksums=True)
+    df.save()
+    from tardis.tardis_portal import staging
+    staging.stage_file(f)
