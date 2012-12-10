@@ -21,6 +21,7 @@ from tardis.apps.mytardis_hpc_app.models import ComputationStatus
 from tempfile import mktemp
 
 
+
 receiver = ""
 
 
@@ -156,11 +157,11 @@ def results_ready(request, group_id):
     """
     Receive the set of files, retrieve in sequence and add to experiment
     """
-    # FIXME: how does it know which experiment?
     res = '""'
     if request.method == 'POST':
         if 'files' in request.POST:
             res = request.POST['files']
+            print "Res in MyTardis %s" % res
         else:
             res = '""'
         if 'experiment_id' in request.POST:
@@ -168,23 +169,38 @@ def results_ready(request, group_id):
         else:
             experiment_id = None
 
-    file_list = json.dumps(res)
+    file_list = json.loads(res)
+
+
+    print "File list ---->>>>>>> %s" % repr(file_list)
     ds = _make_data_set(experiment_id)
+    print "Dataset ", ds
     # get the output files
     for filename in file_list:
-        destination = "http://127.0.0.1:8000/apps/bdphpcprovider/smartconnectorscheduler/" \
-            + "/output/%s/%s" % (group_id, filename)
-        req = urllib2.Request(destination)
+        print "filename %s" % repr(filename)
+
+        url = "%s%s%s/%s/" % (settings.BDP_HPC_URL,
+                             settings.BDP_HPC_OUTPUT_URL,
+                             group_id, filename)
+        print "URL in result ready: %s" % url
+        req = urllib2.Request(url)
+        print "Request --- ", req
         response = urllib2.urlopen(req)
+        print "Response ---", response
         text = response.read()
+        #print "text ....", text
         _make_data_file(ds, filename, text)
-        return HttpResponse("",
-            mimetype='application/json')
+
+
+
+    return HttpResponse("Result ready returned",
+            mimetype='text/plain')
 
 
 def _make_data_set(exp_id):
      # make datafile
     exp = Experiment.objects.get(id=exp_id)
+    print "Experiment ----", exp
     dataset = Dataset(description="HRMC results")
     dataset.save()
     dataset.experiments.add(exp)
@@ -195,7 +211,9 @@ def _make_data_set(exp_id):
 def _make_data_file(dataset, filename, content):
     # TODO:
     # create datasetfile
+
     f = mktemp()
+    print "Inside make data file ", f
     open(f, "w+b").write(content)
     df = Dataset_File()
     df.dataset = dataset
@@ -205,5 +223,6 @@ def _make_data_file(dataset, filename, content):
     df.size = len(content)
     df.verify(allowEmptyChecksums=True)
     df.save()
-    staging.stage_file(f)
+    print "Df ---", df
+    #staging.stage_file(f)
 
