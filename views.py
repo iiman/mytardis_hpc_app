@@ -10,12 +10,15 @@ from django.http import HttpResponse
 from django.template import Context, RequestContext, loader
 
 from tardis.tardis_portal.models.dataset import Dataset
+from tardis.tardis_portal.models import Experiment, Dataset_File
+from tardis.tardis_portal import staging
+
 from tardis.apps.mytardis_hpc_app.form import HPCForm
 from tardis.apps.mytardis_hpc_app.response_form import ResponseForm
 from tardis.tardis_portal.shortcuts import HttpResponse
 
 from tardis.apps.mytardis_hpc_app.models import ComputationStatus
-
+from tempfile import mktemp
 
 
 receiver = ""
@@ -33,6 +36,7 @@ def index(request, experiment_id):
             if input_dir_path:
                 encoded_input_dir = encode_zip(input_dir_path)
                 post_request_values['input_dir'] = encoded_input_dir
+                post_request_values['experiment_id'] = experiment_id
 
             from threading import Thread
             t = Thread(target=submit_job, args=(post_request_values,))
@@ -147,13 +151,59 @@ def set_computation_status(current_id, stage, status):
 
     computation_list[0].save()
 
+
 def results_ready(request, group_id):
+    """
+    Receive the set of files, retrieve in sequence and add to experiment
+    """
+    # FIXME: how does it know which experiment?
     res = '""'
     if request.method == 'POST':
         if 'files' in request.POST:
             res = request.POST['files']
         else:
             res = '""'
-    return HttpResponse(json.dumps(res),
-        mimetype='application/json')
+        if 'experiment_id' in request.POST:
+            experiment_id = request.POST['experiment_id']
+        else:
+            experiment_id = None
+
+    file_list = json.dumps(res)
+    ds = _make_data_set(experiment_id)
+    # get the output files
+    for filename in file_list:
+        destination = "http://127.0.0.1:8000/apps/bdphpcprovider/smartconnectorscheduler/" \
+            + "/output/%s/%s" % (group_id, filename)
+        req = urllib2.Request(destination)
+        response = urllib2.urlopen(req)
+        text = response.read()
+        _make_data_file(ds, filename, text)
+        return HttpResponse("",
+            mimetype='application/json')
+
+
+def _make_data_set(exp_id):
+     # make datafile
+    exp = Experiment.objects.get(id=exp_id)
+    dataset = Dataset(description="HRMC results")
+    dataset.save()
+    dataset.experiments.add(exp)
+    dataset.save()
+    return dataset
+
+
+def _make_data_file(dataset, filename, content):
+    # TODO:
+    # create datasetfile
+    f = mktemp()
+    open(f, "w+b").write(content)
+    df = Dataset_File()
+    df.dataset = dataset
+    df.filename = filename
+    df.url = 'file://'+f
+    df.protocol = "staging"
+    df.size = len(content)
+    df.verify(allowEmptyChecksums=True)
+    df.save()
+    staging.stage_file(f)
 
